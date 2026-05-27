@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays } from "@/lib/dates";
+import { addDays, cumulativeWeek } from "@/lib/dates";
 import { WeeklyReportEditor } from "./weekly-editor";
 
 export const dynamic = "force-dynamic";
@@ -45,13 +45,13 @@ export default async function WeeklyReportPage({
           ← {student.name}
         </Link>
         <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold mt-3">
-          Weekly Report
+          Weekly · {cumulativeWeek(cycle, week)}주차
         </div>
         <h1 className="text-4xl font-extrabold text-gradient mt-1">
-          {student.name} <span className="text-ink/30 font-bold">·</span> 주간
+          {student.name} <span className="text-ink/30 font-bold">·</span> {cumulativeWeek(cycle, week)}주차
         </h1>
         <p className="text-ink/55 mt-2 text-sm">
-          {cycle}번째 사이클 · {cycleStart} ~ {cycleEnd}
+          코칭 {cycle}개월차 · {cycleStart} ~ {cycleEnd}
           {session.role === "admin" && (
             <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white">
               ADMIN
@@ -71,7 +71,7 @@ export default async function WeeklyReportPage({
                 : "text-ink/60 hover:bg-indigo/5"
             }`}
           >
-            {w}주차
+            {cumulativeWeek(cycle, w)}주차
           </Link>
         ))}
         <Link

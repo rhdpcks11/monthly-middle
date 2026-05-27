@@ -22,7 +22,7 @@ export function NewCycleButton({
   }
 
   const label =
-    nextCycle === 1 ? "첫 번째 사이클 시작" : `다음 사이클 시작 (#${nextCycle})`;
+    nextCycle === 1 ? "코칭 1개월차 시작" : `다음 사이클 시작 (코칭 ${nextCycle}개월차)`;
 
   if (primary) {
     return (

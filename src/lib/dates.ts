@@ -18,6 +18,13 @@ export function listDates(start: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => addDays(start, i));
 }
 
+/**
+ * 코칭 시작 이후 누적 주차 (cycle 1, week 1 -> 1주차; cycle 2, week 1 -> 5주차)
+ */
+export function cumulativeWeek(cycle: number, week: number): number {
+  return (cycle - 1) * 4 + week;
+}
+
 // "10:23" 같은 시간 문자열 → 분
 export function hmToMinutes(s: string | null | undefined): number | null {
   if (!s) return null;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays } from "@/lib/dates";
+import { addDays, cumulativeWeek } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 
 export const dynamic = "force-dynamic";
@@ -79,16 +79,16 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-ink">
-              코칭 사이클 <span className="text-ink/40">({cycles.length || 0}개 진행 / 다음 #{nextCycle})</span>
+              코칭 진행 <span className="text-ink/40">({cycles.length || 0}개월 진행 · 다음 {nextCycle}개월차)</span>
             </h2>
             <NewCycleButton studentId={id} nextCycle={nextCycle} />
           </div>
 
           {cycles.length === 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-indigo/5 to-fuchsia/5 border border-indigo/15 p-8 text-center">
-              <p className="text-ink/70 text-sm">아직 시작된 사이클이 없습니다.</p>
+              <p className="text-ink/70 text-sm">아직 시작된 코칭이 없습니다.</p>
               <p className="text-ink/50 text-xs mt-1">
-                아래 첫 번째 사이클부터 시작해주세요. (코칭 시작일 {start} 기준)
+                코칭 1개월차부터 시작해주세요. (시작일 {start} 기준)
               </p>
               <div className="mt-5">
                 <NewCycleButton studentId={id} nextCycle={1} primary />
@@ -114,10 +114,10 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
                   <div className="relative flex items-center justify-between flex-wrap gap-3">
                     <div>
                       <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">
-                        Cycle {cyc}
+                        Coaching Month {cyc}
                       </div>
                       <div className="text-xl font-extrabold text-ink mt-1">
-                        {cyc}번째 사이클
+                        코칭 {cyc}개월차
                       </div>
                       <div className="text-xs text-ink/55 mt-0.5">
                         {cycleStart} ~ {cycleEnd}
@@ -137,7 +137,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
                               : "text-ink/50 border-ink/10 hover:bg-indigo/5"
                           }`}
                         >
-                          {w}주차
+                          {cumulativeWeek(cyc, w)}주차
                         </Link>
                       ))}
                       <Link

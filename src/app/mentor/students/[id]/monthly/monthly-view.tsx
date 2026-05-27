@@ -161,7 +161,7 @@ export function MonthlyReportView({
               <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold">
                 SKY MATE Premium Coaching
               </div>
-              <h1 className="text-3xl font-extrabold text-gradient mt-2">{studentName} 학생 · {cycle}월차</h1>
+              <h1 className="text-3xl font-extrabold text-gradient mt-2">{studentName} 학생 · 코칭 {cycle}개월차</h1>
               <p className="text-sm text-ink/55 mt-2">
                 {highSchool || ""} · 기간 {cycleStart} ~ {cycleEnd}
                 {mentorName && <> · 담당 {mentorName}</>}

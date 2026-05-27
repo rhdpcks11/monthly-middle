@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays } from "@/lib/dates";
+import { addDays, cumulativeWeek } from "@/lib/dates";
 import { MonthlyReportView } from "./monthly-view";
 import type { DayData, WeeklyReport } from "@/types";
 
@@ -58,13 +58,13 @@ export default async function MonthlyReportPage({
           ← {student.name}
         </Link>
         <div className="text-[11px] uppercase tracking-[0.25em] text-fuchsia font-semibold mt-3">
-          Monthly Report
+          Monthly · 코칭 {cycle}개월차
         </div>
         <h1 className="text-4xl font-extrabold text-gradient mt-1">
-          {student.name} <span className="text-ink/30 font-bold">·</span> 월간
+          {student.name} <span className="text-ink/30 font-bold">·</span> 코칭 {cycle}개월차
         </h1>
         <p className="text-ink/55 mt-2 text-sm">
-          {cycle}번째 사이클 · {cycleStart} ~ {cycleEnd}
+          {cycleStart} ~ {cycleEnd}
           {session.role === "admin" && (
             <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white">
               ADMIN
@@ -80,7 +80,7 @@ export default async function MonthlyReportPage({
             href={`/mentor/students/${id}/weekly?cycle=${cycle}&week=${w}`}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-ink/55 hover:bg-indigo/5"
           >
-            {w}주차
+            {cumulativeWeek(cycle, w)}주차
           </Link>
         ))}
         <span className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-fuchsia to-rose text-white shadow-md shadow-fuchsia/30">
