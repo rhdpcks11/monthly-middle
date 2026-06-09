@@ -17,11 +17,13 @@ type Override = { start_date: string | null; end_date: string | null; memo: stri
 export function CycleCards({
   studentId,
   studentName,
+  currentWeek,
   cycles,
   initialOverrides,
 }: {
   studentId: string;
   studentName: string;
+  currentWeek: number;
   cycles: CycleInfo[];
   initialOverrides: Record<number, Override>;
 }) {
@@ -41,6 +43,7 @@ export function CycleCards({
           key={c.cycle}
           studentId={studentId}
           studentName={studentName}
+          currentWeek={currentWeek}
           info={c}
           override={overrides[c.cycle]}
           onSaved={(patch) => patchLocal(c.cycle, patch)}
@@ -53,18 +56,25 @@ export function CycleCards({
 function CycleCard({
   studentId,
   studentName,
+  currentWeek,
   info,
   override,
   onSaved,
 }: {
   studentId: string;
   studentName: string;
+  currentWeek: number;
   info: CycleInfo;
   override?: Override;
   onSaved: (patch: Partial<Override>) => void;
 }) {
   const router = useRouter();
   const { cycle, defaultStart, defaultEnd, weekProgress } = info;
+
+  // [수정 1] 날짜 기반 진행 상태 — 이 월차의 누적 주차 범위와 오늘의 누적 주차 비교
+  const cycleFirstWeek = (cycle - 1) * 4 + 1;
+  const cycleLastWeek = cycle * 4;
+  const isCurrent = currentWeek >= cycleFirstWeek && currentWeek <= cycleLastWeek;
 
   const shownStart = override?.start_date || defaultStart;
   const shownEnd = override?.end_date || defaultEnd;
@@ -176,9 +186,12 @@ function CycleCard({
               >
                 메모{memo ? " ●" : ""}
               </button>
-              <span className="inline-block px-1.5 py-0.5 rounded-full bg-ink/5 text-ink/60 text-[10px]">
-                {weekProgress}/4 주차 진행
-              </span>
+              {/* [수정 1-2/1-3] 완료 월차는 표시 없음, 진행 중 월차만 "N주차 진행 중" */}
+              {isCurrent && (
+                <span className="inline-block px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo font-semibold text-[10px]">
+                  {currentWeek}주차 진행 중
+                </span>
+              )}
             </div>
           )}
         </div>

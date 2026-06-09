@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, resolveCycleStart, todaySeoul, weeksSinceStart, type CycleAnchor } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 
@@ -59,6 +59,9 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
   const cycles = Array.from(cycleSet).sort((a, b) => a - b);
   const nextCycle = cycles.length ? Math.max(...cycles) + 1 : 1;
 
+  // [수정 1] 첫 코칭 시작일 ~ 오늘(KST) 실제 날짜 기준 누적 주차
+  const currentWeek = start ? weeksSinceStart(start, todaySeoul()) : 0;
+
   // 사이클별 week 진행 카운트 (몇 주차까지 시작됐는지)
   const weekCountByCycle: Record<number, number> = {};
   (weeklyRows || []).forEach((r) => {
@@ -74,22 +77,24 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         <Link href={isAdmin ? "/admin/students" : "/mentor"} className="text-sm text-ink/55 hover:text-indigo">
           ← {isAdmin ? "학생 관리" : "내 학생 목록"}
         </Link>
-        <h1 className="text-4xl font-extrabold text-gradient mt-2">{student.name}</h1>
-        <p className="text-ink/55 mt-2 text-sm">
-          {student.high_school || "학교 미입력"}
-          {student.grade ? ` · ${student.grade}` : ""}
-          {isAdmin && (student as any).mentor?.name ? ` · 담당 ${(student as any).mentor.name} 멘토` : ""}
-        </p>
+        {/* [수정 2] 이름 옆 학년 표시, 이름 아래 학교명 제거 */}
+        <h1 className="text-4xl font-extrabold text-gradient mt-2">
+          {student.name}
+          {student.grade ? `(${student.grade})` : ""}
+        </h1>
+        {isAdmin && (student as any).mentor?.name && (
+          <p className="text-ink/55 mt-2 text-sm">담당 {(student as any).mentor.name} 멘토</p>
+        )}
       </div>
 
       <section className="rounded-2xl bg-white border border-ink/5 p-6 shadow-sm">
         <h2 className="text-base font-bold text-ink mb-4">학생 정보</h2>
+        {/* [수정 2-3] 고등학교 / 학생 전화번호 / 첫 코칭 시작일 순 */}
         <div className="grid grid-cols-2 gap-4 text-sm">
-          {/* [수정 8-1] 라벨 변경 */}
+          <Info label="고등학교" value={student.high_school} />
           <Info label="학생 전화번호" value={student.phone} />
-          {/* [수정 8-2] 학부모 연락처는 관리자 화면에서만 표시 */}
-          {isAdmin && <Info label="학부모 연락처" value={student.parent_phone} />}
           <Info label="첫 코칭 시작일" value={student.coaching_start_date} />
+          {isAdmin && <Info label="학부모 연락처" value={student.parent_phone} />}
         </div>
       </section>
 
@@ -102,7 +107,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-ink">
-              코칭 진행 <span className="text-ink/40">({cycles.length || 0}개월 진행 · 다음 {nextCycle}개월차)</span>
+              코칭 진행 <span className="text-ink/40">({currentWeek > 0 ? `${currentWeek}주차 진행 중` : "곧 시작"})</span>
             </h2>
             <NewCycleButton studentId={id} nextCycle={nextCycle} />
           </div>
@@ -122,6 +127,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           <CycleCards
             studentId={id}
             studentName={student.name}
+            currentWeek={currentWeek}
             cycles={cycles.map<CycleInfo>((cyc) => {
               const cycleStart = resolveCycleStart(start, cyc, anchors);
               return {

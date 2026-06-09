@@ -68,6 +68,30 @@ export function resolveCycleStart(
   return addDays(chosen.start_date, (cycle - chosen.cycle) * 28);
 }
 
+/** 서버(UTC)에서도 한국시간(KST) 기준 오늘 날짜(yyyy-mm-dd). */
+export function todaySeoul(): string {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 10);
+}
+
+/** 두 날짜(yyyy-mm-dd) 사이 일수 (b - a). */
+export function daysBetween(a: string, b: string): number {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
+}
+
+/**
+ * 코칭 시작일부터 오늘까지 실제 날짜 기준 누적 주차.
+ * 시작일이 속한 주(월~일)를 1주차로 하여 7일마다 +1. 시작 전이면 0.
+ */
+export function weeksSinceStart(start: string, today: string): number {
+  const diff = daysBetween(start, today);
+  if (diff < 0) return 0;
+  return Math.floor(diff / 7) + 1;
+}
+
 // "10:23" 같은 시간 문자열 → 분
 export function hmToMinutes(s: string | null | undefined): number | null {
   if (!s) return null;

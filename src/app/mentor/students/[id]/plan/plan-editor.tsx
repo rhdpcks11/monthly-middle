@@ -84,6 +84,12 @@ export function WeeklyPlanEditor({
   const setDay = (key: WeekdayKey, dayPatch: Partial<PlanDay>) =>
     update({ ...plan, days: { ...plan.days, [key]: { ...plan.days[key], ...dayPatch } } });
 
+  // [수정 3-2] 달성률 = 월~일 요일별 할 일 체크 수 ÷ 전체 할 일 수 × 100 (Weekly Goals 제외)
+  const dayTasks = WEEKDAY_LABEL.flatMap((wd) => plan.days[wd.key]?.tasks || []);
+  const totalTasks = dayTasks.length;
+  const doneTasks = dayTasks.filter((t) => t.done).length;
+  const achievement = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end no-print">
@@ -136,26 +142,14 @@ export function WeeklyPlanEditor({
             onChange={(patch) => setDay(wd.key, patch)}
           />
         ))}
-        <SectionCard title="Summary" accent="violet" subtitle="달성률 · 피드백">
-          <div className="space-y-3">
-            <div>
-              <label className="text-[11px] text-ink/55 font-semibold">달성률</label>
-              <input
-                value={plan.summary.achievement}
-                onChange={(e) => update({ ...plan, summary: { ...plan.summary, achievement: e.target.value } })}
-                placeholder="예: 85%"
-                className="mt-1 w-full rounded-lg border border-ink/10 px-2.5 py-1.5 text-sm outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
-              />
+        {/* [수정 3-2] 달성률만 칸 전체를 꽉 채워 크게 표시 (할 일 체크 기반 자동 계산) */}
+        <SectionCard title="Summary" accent="violet" subtitle="달성률">
+          <div className="flex-1 flex flex-col items-center justify-center py-4">
+            <div className="text-6xl font-extrabold text-gradient tabular-nums leading-none">
+              {achievement}%
             </div>
-            <div>
-              <label className="text-[11px] text-ink/55 font-semibold">피드백</label>
-              <textarea
-                rows={5}
-                value={plan.summary.feedback}
-                onChange={(e) => update({ ...plan, summary: { ...plan.summary, feedback: e.target.value } })}
-                placeholder="한 주 피드백을 자유롭게 작성하세요"
-                className="mt-1 w-full rounded-lg border border-ink/10 px-2.5 py-1.5 text-sm leading-relaxed outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
-              />
+            <div className="mt-3 text-xs text-ink/45">
+              할 일 {doneTasks}/{totalTasks} 완료
             </div>
           </div>
         </SectionCard>
@@ -226,7 +220,7 @@ function DayColumn({
         <Checklist
           items={day.tasks}
           onChange={(tasks) => onChange({ tasks })}
-          placeholder="과제 입력"
+          placeholder="할 일 입력"
           compact
         />
       </div>

@@ -4,7 +4,7 @@ import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { WeeklyReportEditor } from "./weekly-editor";
-import { EditableCycleDate, AdminMemoPanel, type CycleNote } from "../report-extras";
+import { AdminMemoPanel, type CycleNote } from "../report-extras";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,11 @@ export default async function WeeklyReportPage({
     .maybeSingle();
 
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  const cycleEnd = addDays(cycleStart, 27);
+  // [수정 6] 학생 상세 페이지에서 수정한 월차 시작일(오버라이드)이 있으면 그 날짜에 연동
+  const effectiveStart = cycleRow?.start_date || cycleStart;
+  // [수정 5] 월차 전체가 아닌 "해당 주차" 날짜 범위
+  const weekStart = addDays(effectiveStart, (week - 1) * 7);
+  const weekEnd = addDays(weekStart, 6);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
   return (
@@ -66,19 +70,13 @@ export default async function WeeklyReportPage({
         <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold mt-3">
           Weekly · {cumulativeWeek(cycle, week)}주차
         </div>
+        {/* [수정 4] 타이틀에 "주간 레포트" 추가 */}
         <h1 className="text-4xl font-extrabold text-gradient mt-1">
-          {student.name} <span className="text-ink/30 font-bold">·</span> {cumulativeWeek(cycle, week)}주차
+          {student.name} <span className="text-ink/30 font-bold">·</span> {cumulativeWeek(cycle, week)}주차 주간 레포트
         </h1>
+        {/* [수정 5/6] 해당 주차 날짜만 표시, 수정(연필) 불가 — 날짜 수정은 학생 상세 페이지에서 */}
         <p className="text-ink/55 mt-2 text-sm">
-          코칭 {cycle}개월차 ·{" "}
-          <EditableCycleDate
-            studentId={id}
-            cycle={cycle}
-            defaultStart={cycleStart}
-            defaultEnd={cycleEnd}
-            overrideStart={cycleRow?.start_date ?? null}
-            overrideEnd={cycleRow?.end_date ?? null}
-          />
+          코칭 {cycle}개월차 · {weekStart} ~ {weekEnd}
           {session.role === "admin" && (
             <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white">
               ADMIN
