@@ -18,7 +18,10 @@ export default async function MentorLayout({ children }: { children: React.React
               { href: "/admin", label: "관리자 홈" },
               { href: "/admin/students", label: "학생 관리" },
             ]
-          : [{ href: "/mentor", label: "내 학생" }]
+          : [
+              { href: "/mentor", label: "내 학생" },
+              { href: "/mentor/review", label: "복습" },
+            ]
       }
     >
       {children}

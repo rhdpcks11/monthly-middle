@@ -1,0 +1,34 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+import { generateQuiz, type UploadAsset } from "@/lib/review/anthropic";
+
+export const runtime = "nodejs";
+export const maxDuration = 120; // AI 생성은 시간이 걸릴 수 있음
+
+export async function POST(req: Request) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
+
+  try {
+    const body = await req.json();
+    const assets: UploadAsset[] = body.assets ?? [];
+    const hint: string | undefined = body.hint;
+
+    if (!Array.isArray(assets) || assets.length === 0) {
+      return NextResponse.json(
+        { error: "자료(이미지 또는 PDF)를 1개 이상 올려주세요." },
+        { status: 400 }
+      );
+    }
+
+    const quiz = await generateQuiz(assets, hint);
+    return NextResponse.json({ quiz });
+  } catch (e: any) {
+    console.error("[/api/review/generate]", e);
+    const msg =
+      e?.message?.includes("ANTHROPIC_API_KEY") || e?.status === 401
+        ? "Claude API 키가 올바르지 않습니다. .env.local 을 확인하세요."
+        : e?.message || "문제 생성 중 오류가 발생했습니다.";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

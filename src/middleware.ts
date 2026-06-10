@@ -14,7 +14,13 @@ function readSession(req: NextRequest): { role?: string; mentorId?: string } | n
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
-  const isPublic = path === "/" || path.startsWith("/api/login");
+  const isPublic =
+    path === "/" ||
+    path.startsWith("/api/login") ||
+    // 복습 — 학생 공개 경로 (로그인 불필요)
+    path.startsWith("/quiz") ||
+    path.startsWith("/api/review/quiz") ||
+    path.startsWith("/api/review/submit");
   const session = readSession(req);
 
   // 비로그인 + 보호 라우트

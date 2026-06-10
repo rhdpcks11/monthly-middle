@@ -5,6 +5,7 @@ import { getServiceClient } from "@/lib/supabase";
 import { addDays, resolveCycleStart, todaySeoul, weeksSinceStart, type CycleAnchor } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
+import { listReviewSetsByStudent } from "@/lib/review/store";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,11 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     );
   });
 
+  // 이 학생에게 연결된 복습 세트
+  const reviewSets = (await listReviewSetsByStudent(id)) as {
+    id: string; code: string; title: string; subject: string | null; created_at: string;
+  }[];
+
   return (
     <div className="space-y-8">
       <div>
@@ -96,6 +102,40 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           <Info label="첫 코칭 시작일" value={student.coaching_start_date} />
           {isAdmin && <Info label="학부모 연락처" value={student.parent_phone} />}
         </div>
+      </section>
+
+      {/* 복습 — 이 학생용 출제/기록 */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-ink">복습 테스트</h2>
+          <Link
+            href={`/mentor/review/new?studentId=${id}`}
+            className="btn-gradient rounded-xl px-4 py-2 text-sm font-semibold"
+          >
+            + 이 학생 복습 출제
+          </Link>
+        </div>
+        {reviewSets.length === 0 ? (
+          <p className="text-sm text-ink/45 py-5 text-center rounded-2xl bg-white border border-ink/5">
+            아직 출제한 복습이 없습니다.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {reviewSets.map((r) => (
+              <Link
+                key={r.id}
+                href={`/mentor/review/${r.id}`}
+                className="rounded-2xl bg-white border border-ink/5 p-4 hover:shadow-lg hover:shadow-indigo/10 transition"
+              >
+                <div className="font-bold text-ink line-clamp-1">{r.title}</div>
+                <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+                  <span className="font-mono font-bold bg-indigo/10 text-indigo rounded-full px-2.5 py-1">{r.code}</span>
+                  {r.subject && <span className="bg-ink/5 text-ink/60 rounded-full px-2.5 py-1">{r.subject}</span>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {!start ? (

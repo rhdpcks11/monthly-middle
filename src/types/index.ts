@@ -105,3 +105,89 @@ export type Session = {
   mentorId?: string;
   mentorName?: string;
 };
+
+// ── 복습(Review) 기능 ───────────────────────────────────────────
+export type QuestionType = "multiple_choice" | "ox" | "short_answer" | "essay";
+
+export interface ReviewQuestion {
+  type: QuestionType;
+  question: string;
+  /** 객관식 보기. OX는 ["O","X"], 단답/서술형은 빈 배열. */
+  options: string[];
+  /** 정답. 객관식=정답 보기 텍스트, OX="O"/"X", 단답=대표 정답, 서술형=모범답안. */
+  answer: string;
+  /** 단답형에서 정답으로 인정할 다른 표현들. */
+  acceptedAnswers: string[];
+  /** 해설 (오답 시 학생에게 보여줌). */
+  explanation: string;
+  difficulty: "easy" | "medium" | "hard";
+  /** 멘토 비공개 메모 (문제별). 학생에게 노출 금지. */
+  mentorNote?: string;
+}
+
+export interface ReviewQuiz {
+  title: string;
+  questions: ReviewQuestion[];
+  /** 멘토 비공개 메모 (테스트 전체). 학생에게 노출 금지. */
+  mentorNote?: string;
+}
+
+/** 저장된 복습 세트(DB review_sets). */
+export interface ReviewSet extends ReviewQuiz {
+  id: string;
+  code: string;
+  mentorId?: string | null;
+  studentId?: string | null;
+  subject?: string | null;
+  createdAt: string;
+}
+
+/** 학생에게 내려보내는, 정답이 제거된 문제. */
+export interface PublicReviewQuestion {
+  type: QuestionType;
+  question: string;
+  options: string[];
+  difficulty: ReviewQuestion["difficulty"];
+}
+
+export interface PublicReviewQuiz {
+  code: string;
+  title: string;
+  questions: PublicReviewQuestion[];
+}
+
+/** 채점 결과 (문제별). */
+export interface GradedItem {
+  index: number;
+  type: QuestionType;
+  question: string;
+  studentAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  /** 서술형 등 부분점수 (0~1). */
+  score: number;
+  explanation: string;
+  feedback: string;
+}
+
+export interface GradeResult {
+  total: number;
+  correct: number;
+  scorePercent: number;
+  items: GradedItem[];
+}
+
+/** 응시 기록(DB review_attempts) 요약 — 멘토 조회용. */
+export interface ReviewAttempt {
+  id: string;
+  review_set_id: string;
+  student_id: string | null;
+  student_name: string | null;
+  subject: string | null;
+  title: string | null;
+  score_percent: number;
+  total: number;
+  correct: number;
+  result: GradedItem[];
+  completed_at: string;
+}
