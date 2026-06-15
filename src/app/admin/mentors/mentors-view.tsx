@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Mentor } from "@/types";
 
@@ -170,6 +171,12 @@ export function MentorsView({ initial }: { initial: Mentor[] }) {
                     </td>
                     <td className="px-4 py-3 text-ink/50">{m.created_at?.slice(0, 10)}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Link
+                        href={`/mentor?mentorId=${m.id}`}
+                        className="text-xs text-fuchsia hover:underline mr-3"
+                      >
+                        관리
+                      </Link>
                       <button
                         onClick={() => startEdit(m)}
                         className="text-xs text-indigo hover:underline mr-3"

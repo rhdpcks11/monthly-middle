@@ -287,9 +287,7 @@ export function StudentsView({
               onChange={(e) => setField("grade", e.target.value)}
               className={inputCls}
             >
-              <option value="" disabled>
-                학년 선택
-              </option>
+              <option value="">미선택</option>
               {GRADE_OPTIONS.map((g) => (
                 <option key={g} value={g}>
                   {g}
@@ -570,11 +568,12 @@ function StudentTable({
         <thead className="bg-gradient-to-r from-indigo/5 to-fuchsia/5 text-ink/60 text-[11px] uppercase tracking-[0.15em]">
           <tr>
             <th className="text-left px-4 py-3">학생</th>
-            <th className="text-left px-4 py-3">학교 / 학년</th>
-            <th className="text-left px-4 py-3">학부모 전화</th>
+            <th className="text-left px-4 py-3">학교</th>
+            <th className="text-left px-4 py-3">학년</th>
+            <th className="text-left px-4 py-3">학생 번호 / 학부모 번호</th>
             <th className="text-left px-4 py-3">코칭 시작</th>
             <th className="text-left px-4 py-3">담당 멘토</th>
-            <th className="text-left px-4 py-3">레포트</th>
+            <th className="text-left px-4 py-3">관리</th>
             <th className="text-right px-4 py-3"></th>
           </tr>
         </thead>
@@ -583,13 +582,13 @@ function StudentTable({
             <tr key={s.id} className="hover:bg-indigo/[0.02] transition">
               <td className="px-4 py-3">
                 <div className="font-medium">{s.name}</div>
-                <div className="text-xs text-ink/50">{s.phone || "-"}</div>
               </td>
-              <td className="px-4 py-3">
-                <div>{s.high_school || "-"}</div>
-                <div className="text-xs text-ink/50">{s.grade || ""}</div>
+              <td className="px-4 py-3">{s.high_school || "-"}</td>
+              <td className="px-4 py-3">{s.grade || "-"}</td>
+              <td className="px-4 py-3 text-ink/70">
+                <div>{s.phone || "-"}</div>
+                <div className="text-xs text-ink/50">{s.parent_phone || "-"}</div>
               </td>
-              <td className="px-4 py-3 text-ink/70">{s.parent_phone || "-"}</td>
               <td className="px-4 py-3 text-ink/70">{s.coaching_start_date || "-"}</td>
               <td className="px-4 py-3">
                 <select
@@ -606,24 +605,12 @@ function StudentTable({
                 </select>
               </td>
               <td className="px-4 py-3">
-                {s.coaching_start_date ? (
-                  <div className="flex gap-1.5">
-                    <Link
-                      href={`/mentor/students/${s.id}/weekly?cycle=1&week=1`}
-                      className="text-xs rounded-full px-2.5 py-1 font-semibold bg-gradient-to-r from-indigo/10 to-violet/10 text-indigo border border-indigo/15 hover:from-indigo/20 hover:to-violet/20 transition"
-                    >
-                      주간
-                    </Link>
-                    <Link
-                      href={`/mentor/students/${s.id}/monthly?cycle=1`}
-                      className="text-xs rounded-full px-2.5 py-1 font-semibold bg-gradient-to-r from-fuchsia/10 to-rose/10 text-fuchsia border border-fuchsia/15 hover:from-fuchsia/20 hover:to-rose/20 transition"
-                    >
-                      월간
-                    </Link>
-                  </div>
-                ) : (
-                  <span className="text-xs text-ink/40">시작일 미설정</span>
-                )}
+                <Link
+                  href={`/mentor/students/${s.id}`}
+                  className="text-xs rounded-full px-3 py-1 font-semibold bg-gradient-to-r from-indigo/10 to-violet/10 text-indigo border border-indigo/15 hover:from-indigo/20 hover:to-violet/20 transition"
+                >
+                  관리
+                </Link>
               </td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
                 <button onClick={() => onEdit(s)} className="text-xs text-indigo hover:underline mr-3">
@@ -640,7 +627,7 @@ function StudentTable({
           ))}
           {students.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-12 text-center text-ink/40 text-sm">
+              <td colSpan={8} className="px-4 py-12 text-center text-ink/40 text-sm">
                 아직 등록된 학생이 없습니다
               </td>
             </tr>
@@ -684,9 +671,7 @@ function EditModal({
               onChange={(e) => set("grade", e.target.value || null)}
               className={inputCls}
             >
-              <option value="" disabled>
-                학년 선택
-              </option>
+              <option value="">미선택</option>
               {GRADE_OPTIONS.map((g) => (
                 <option key={g} value={g}>
                   {g}

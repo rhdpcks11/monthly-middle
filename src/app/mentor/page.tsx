@@ -11,14 +11,35 @@ const CARD_GRADIENTS = [
   "from-indigo/15 via-fuchsia/10 to-rose/15",
 ];
 
-export default async function MentorHomePage() {
+export default async function MentorHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mentorId?: string }>;
+}) {
   const session = await getSession();
-  if (!session?.mentorId) return null;
+  if (!session) return null;
+  const sp = await searchParams;
+  const isAdmin = session.role === "admin";
+  // [수정 5] 관리자가 멘토 관리에서 "관리"를 누르면 해당 멘토의 담당 학생 페이지를 그대로 본다
+  const viewingMentorId = isAdmin && sp.mentorId ? sp.mentorId : null;
+  const effectiveMentorId = viewingMentorId || session.mentorId;
+  if (!effectiveMentorId) return null;
+
   const supabase = getServiceClient();
+  let viewingMentorName: string | null = null;
+  if (viewingMentorId) {
+    const { data: m } = await supabase
+      .from("coaching_mentors")
+      .select("name")
+      .eq("id", viewingMentorId)
+      .maybeSingle();
+    viewingMentorName = m?.name ?? null;
+  }
+
   const { data: students } = await supabase
     .from("coaching_students")
     .select("*")
-    .eq("mentor_id", session.mentorId)
+    .eq("mentor_id", effectiveMentorId)
     .order("created_at", { ascending: false });
 
   const all = (students || []) as any[];
@@ -28,10 +49,17 @@ export default async function MentorHomePage() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold">
+        {viewingMentorId && (
+          <Link href="/admin/mentors" className="text-sm text-ink/55 hover:text-indigo">
+            ← 멘토 관리
+          </Link>
+        )}
+        <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold mt-2">
           My Students
         </div>
-        <h1 className="text-4xl font-extrabold text-gradient mt-2">내 담당 학생</h1>
+        <h1 className="text-4xl font-extrabold text-gradient mt-2">
+          {viewingMentorName ? `${viewingMentorName} 멘토의 담당 학생` : "내 담당 학생"}
+        </h1>
         <p className="text-ink/55 mt-2 text-sm">
           학생을 선택하면 주간/월간 레포트 작성 화면으로 이동합니다
         </p>
