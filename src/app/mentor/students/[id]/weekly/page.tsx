@@ -5,6 +5,9 @@ import { getServiceClient } from "@/lib/supabase";
 import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { WeeklyReportEditor } from "./weekly-editor";
 import { AdminMemoPanel, type CycleNote } from "../report-extras";
+import { ConsultingRefPanel } from "../consulting-ref-panel";
+import { getSubmissionByWeek } from "@/lib/consulting/store";
+import type { ConsultingSubmission } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +61,14 @@ export default async function WeeklyReportPage({
   const weekEnd = addDays(weekStart, 6);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
+  // 5단계 — 이 주차의 주간 성장 코칭 폼 제출(있으면 참고용 표시)
+  let consultingSub: ConsultingSubmission | null = null;
+  try {
+    consultingSub = await getSubmissionByWeek(id, cumulativeWeek(cycle, week), "weekly");
+  } catch {
+    consultingSub = null;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,6 +119,8 @@ export default async function WeeklyReportPage({
           월간 →
         </Link>
       </div>
+
+      <ConsultingRefPanel submission={consultingSub} />
 
       <WeeklyReportEditor studentId={id} cycle={cycle} week={week} />
     </div>

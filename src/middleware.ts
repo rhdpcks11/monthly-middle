@@ -20,7 +20,10 @@ export function middleware(req: NextRequest) {
     // 복습 — 학생 공개 경로 (로그인 불필요)
     path.startsWith("/quiz") ||
     path.startsWith("/api/review/quiz") ||
-    path.startsWith("/api/review/submit");
+    path.startsWith("/api/review/submit") ||
+    // 컨설팅 폼 — 학생 공개 경로 (토큰 기반, 로그인 불필요)
+    path.startsWith("/c/") ||
+    path.startsWith("/api/consulting");
   const session = readSession(req);
 
   // 비로그인 + 보호 라우트

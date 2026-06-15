@@ -5,7 +5,9 @@ import { getServiceClient } from "@/lib/supabase";
 import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { MonthlyReportView } from "./monthly-view";
 import { EditableCycleDate, AdminMemoPanel, type CycleNote } from "../report-extras";
-import type { DayData, WeeklyReport } from "@/types";
+import { ConsultingRefPanel } from "../consulting-ref-panel";
+import { getSubmissionByWeek } from "@/lib/consulting/store";
+import type { DayData, WeeklyReport, ConsultingSubmission } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +72,14 @@ export default async function MonthlyReportPage({
   const cycleEnd = addDays(cycleStart, 27);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
+  // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
+  let consultingSub: ConsultingSubmission | null = null;
+  try {
+    consultingSub = await getSubmissionByWeek(id, cumulativeWeek(cycle, 1), "monthly");
+  } catch {
+    consultingSub = null;
+  }
+
   return (
     <div className="space-y-6">
       <div className="no-print">
@@ -115,6 +125,8 @@ export default async function MonthlyReportPage({
           월간
         </span>
       </div>
+
+      <ConsultingRefPanel submission={consultingSub} />
 
       <MonthlyReportView
         studentId={id}

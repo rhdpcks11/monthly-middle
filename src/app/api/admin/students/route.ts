@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { mondayOf } from "@/lib/dates";
+import { generateToken } from "@/lib/consulting/store";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -21,6 +22,8 @@ export async function POST(req: Request) {
       mentor_id: mentor_id || null,
       // 코칭은 항상 월요일 시작 → 입력 요일과 무관하게 그 주 월요일로 보정
       coaching_start_date: coaching_start_date ? mondayOf(coaching_start_date) : null,
+      // 학생 컨설팅 폼 공개 링크 토큰 자동 발급
+      consulting_token: generateToken(),
     })
     .select()
     .single();

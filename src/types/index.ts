@@ -16,8 +16,30 @@ export type Student = {
   mentor_id: string | null;
   coaching_start_date: string | null;
   coaching_ended: boolean;
+  consulting_token: string | null;   // 학생 컨설팅 폼 공개 링크 토큰 (/c/[token])
   created_at: string;
   updated_at: string;
+};
+
+// ── 컨설팅 폼 제출 ───────────────────────────────────────────
+export type ConsultingFormType = "weekly" | "monthly";
+
+/** 업로드된 이미지 1장 (file_paths JSON에 저장). */
+export type ConsultingFile = {
+  url: string;   // public URL
+  path: string;  // storage object path
+};
+
+export type ConsultingSubmission = {
+  id: string;
+  student_id: string;
+  week_number: number;
+  form_type: ConsultingFormType;
+  submitted_at: string;
+  answers: Record<string, string>;            // { 장문 질문키: 답변 }
+  file_paths: Record<string, ConsultingFile[]>; // { 이미지 질문키: [업로드들] }
+  agreements: Record<string, boolean>;         // { 동의항목키: true }
+  memo: string | null;
 };
 
 export type CoachingCycle = {

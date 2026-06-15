@@ -6,6 +6,9 @@ import { addDays, resolveCycleStart, todaySeoul, weeksSinceStart, type CycleAnch
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 import { listReviewSetsByStudent } from "@/lib/review/store";
+import { ensureToken, listSubmissionsByStudent } from "@/lib/consulting/store";
+import { weekStateForStudent } from "@/lib/consulting/week";
+import { ConsultingSection } from "./consulting-section";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +80,23 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     id: string; code: string; title: string; subject: string | null; created_at: string;
   }[];
 
+  // 컨설팅 폼 — 공개 링크 토큰 + 제출 내역
+  // (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
+  let consultingToken: string | null = null;
+  let submissions: Awaited<ReturnType<typeof listSubmissionsByStudent>> = [];
+  let consultingReady = true;
+  try {
+    consultingToken = await ensureToken(id);
+    submissions = await listSubmissionsByStudent(id);
+  } catch {
+    consultingReady = false;
+  }
+  const weekState = weekStateForStudent(start);
+  const consultingCurrent =
+    weekState.kind === "form"
+      ? { state: "form" as const, week: weekState.week, formType: weekState.formType }
+      : { state: "other" as const };
+
   return (
     <div className="space-y-8">
       <div>
@@ -137,6 +157,15 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </section>
+
+      {/* 컨설팅 폼 — 학생 제출 링크 + 줌 컨설팅 prep */}
+      {consultingReady && consultingToken ? (
+        <ConsultingSection token={consultingToken} submissions={submissions} current={consultingCurrent} />
+      ) : (
+        <section className="rounded-2xl bg-gradient-to-br from-sunset/10 to-rose/10 border border-sunset/30 p-5 text-sm text-ink/75">
+          컨설팅 제출 기능은 DB 마이그레이션(<code className="text-xs">20260615_consulting.sql</code>) 적용 후 사용할 수 있습니다.
+        </section>
+      )}
 
       {!start ? (
         <div className="rounded-2xl bg-gradient-to-br from-sunset/10 to-rose/10 border border-sunset/30 p-6 text-sm text-ink/80">
