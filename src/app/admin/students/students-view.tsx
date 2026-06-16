@@ -21,8 +21,8 @@ type Student = {
 
 type MentorOpt = { id: string; name: string };
 
-// [변경 1] 학년 옵션
-const GRADE_OPTIONS = ["고1", "고2", "고3", "재수생", "N수생"];
+// [변경 1] 학년 옵션 (중등)
+const GRADE_OPTIONS = ["중1", "중2", "중3"];
 
 const EMPTY_FORM = {
   name: "",
@@ -174,12 +174,12 @@ export function StudentsView({
       "학년",
       "학생 전화번호",
       "학부모 전화번호",
-      "출신 고등학교",
+      "출신 중학교",
       "담당 멘토",
       "첫 코칭 시작일 (월요일)",
     ];
     // 예시 시작일은 반드시 월요일로 안내 (2026-06-08 = 월). 월요일이 아니어도 업로드 시 자동 보정됨
-    const example = ["김예시", "고3", "010-1234-5678", "010-8765-4321", "예시고등학교", mentors[0]?.name || "", "2026-06-08"];
+    const example = ["김예시", "중3", "010-1234-5678", "010-8765-4321", "예시중학교", mentors[0]?.name || "", "2026-06-08"];
     const ws = XLSX.utils.aoa_to_sheet([header, example]);
     ws["!cols"] = header.map(() => ({ wch: 16 }));
     const wb = XLSX.utils.book_new();
@@ -236,7 +236,7 @@ export function StudentsView({
           grade: gradeRaw || null,
           phone: String(row["학생 전화번호"] ?? "").trim() || null,
           parent_phone: String(row["학부모 전화번호"] ?? "").trim() || null,
-          high_school: String(row["출신 고등학교"] ?? "").trim() || null,
+          high_school: String(row["출신 중학교"] ?? "").trim() || null,
           mentor_id,
           coaching_start_date: normDate(startDateOf(row)),
         };
@@ -311,7 +311,7 @@ export function StudentsView({
               className={inputCls}
             />
           </Field>
-          <Field label="출신 고등학교">
+          <Field label="출신 중학교">
             <input
               value={form.high_school}
               onChange={(e) => setField("high_school", e.target.value)}
@@ -689,7 +689,7 @@ function EditModal({
               className={inputCls}
             />
           </Field>
-          <Field label="출신 고등학교">
+          <Field label="출신 중학교">
             <input
               value={draft.high_school ?? ""}
               onChange={(e) => set("high_school", e.target.value || null)}

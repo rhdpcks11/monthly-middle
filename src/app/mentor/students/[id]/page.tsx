@@ -117,7 +117,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         <h2 className="text-base font-bold text-ink mb-4">학생 정보</h2>
         {/* [수정 2-3] 고등학교 / 학생 전화번호 / 첫 코칭 시작일 순 */}
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <Info label="고등학교" value={student.high_school} />
+          <Info label="중학교" value={student.high_school} />
           <Info label="학생 전화번호" value={student.phone} />
           <Info label="첫 코칭 시작일" value={student.coaching_start_date} />
           {isAdmin && <Info label="학부모 연락처" value={student.parent_phone} />}
