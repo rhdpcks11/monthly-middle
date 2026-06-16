@@ -126,6 +126,13 @@ function SubmissionCard({ sub }: { sub: ConsultingSubmission }) {
       {open && (
         <div className="px-4 pb-4 space-y-4 border-t border-ink/5 pt-4">
           {fields.map((f) => {
+            if (f.type === "section") {
+              return (
+                <div key={f.key} className="pt-2 first:pt-0 text-[11px] uppercase tracking-[0.18em] text-indigo/70 font-bold border-b border-ink/5 pb-1">
+                  {f.label}
+                </div>
+              );
+            }
             if (f.type === "image") {
               const imgs = sub.file_paths?.[f.key] || [];
               if (!imgs.length) return null;

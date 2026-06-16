@@ -40,13 +40,9 @@ export async function POST(req: Request) {
   const answers: Record<string, string> = {};
   const filePaths: Record<string, ConsultingFile[]> = {};
   for (const f of fields) {
-    if (f.type === "longtext") {
-      const v = (rawAnswers[f.key] ?? "").toString().trim();
-      if (f.required && !v) {
-        return NextResponse.json({ error: `'${f.label}' 항목을 작성해주세요.` }, { status: 400 });
-      }
-      if (v) answers[f.key] = v;
-    } else {
+    if (f.type === "section") {
+      continue; // 섹션 헤더 — 입력 아님
+    } else if (f.type === "image") {
       const files = Array.isArray(rawFiles[f.key]) ? rawFiles[f.key] : [];
       // 경로 변조 방지: 반드시 이 학생 폴더 하위만 허용
       const safe = files.filter(
@@ -56,6 +52,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `'${f.label}' 이미지를 업로드해주세요.` }, { status: 400 });
       }
       if (safe.length) filePaths[f.key] = safe;
+    } else {
+      // longtext / short / single / multi — 모두 문자열 답변 (multi 는 클라이언트가 ", "로 결합해 전송)
+      const v = (rawAnswers[f.key] ?? "").toString().trim();
+      if (f.required && !v) {
+        return NextResponse.json({ error: `'${f.label}' 항목을 작성해주세요.` }, { status: 400 });
+      }
+      if (v) answers[f.key] = v;
     }
   }
 

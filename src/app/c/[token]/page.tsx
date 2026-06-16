@@ -117,11 +117,29 @@ function ConsultingForm({
   cfg: Extract<FormConfig, { state: "form" }>;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [multi, setMulti] = useState<Record<string, string[]>>({});   // 다중선택 (예정 선택지)
+  const [other, setOther] = useState<Record<string, string>>({});     // 다중선택 "기타" 직접입력
   const [files, setFiles] = useState<Record<string, ConsultingFile[]>>({});
   const [agree, setAgree] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // showIf 조건(특정 multi 선택 시에만 노출)
+  const visible = (f: ConsultingField) =>
+    !f.showIf || (multi[f.showIf.key] || []).includes(f.showIf.includes);
+  // 다중선택 → 저장 문자열 (선택지 + 기타입력, ", "로 결합)
+  const multiValue = (key: string) => {
+    const arr = [...(multi[key] || [])];
+    const ot = (other[key] || "").trim();
+    if (ot) arr.push(ot);
+    return arr.join(", ");
+  };
+  const toggleMulti = (key: string, opt: string) =>
+    setMulti((s) => {
+      const cur = s[key] || [];
+      return { ...s, [key]: cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt] };
+    });
 
   if (done) {
     return (
@@ -138,15 +156,21 @@ function ConsultingForm({
 
   async function submit() {
     setError(null);
-    // 클라이언트 1차 검증 (서버에서도 재검증)
+    // 클라이언트 1차 검증 (서버에서도 재검증). 숨겨진(showIf 미충족) 필드는 검증 제외.
     for (const f of cfg.fields) {
-      if (!f.required) continue;
-      if (f.type === "longtext" && !(answers[f.key] || "").trim()) {
+      if (f.type === "section" || !f.required || !visible(f)) continue;
+      if (f.type === "image") {
+        if (!(files[f.key]?.length)) {
+          setError(`'${f.label}' 이미지를 업로드해주세요.`);
+          return;
+        }
+      } else if (f.type === "multi") {
+        if (!multiValue(f.key)) {
+          setError(`'${f.label}' 항목을 선택해주세요.`);
+          return;
+        }
+      } else if (!(answers[f.key] || "").trim()) {
         setError(`'${f.label}' 항목을 작성해주세요.`);
-        return;
-      }
-      if (f.type === "image" && !(files[f.key]?.length)) {
-        setError(`'${f.label}' 이미지를 업로드해주세요.`);
         return;
       }
     }
@@ -154,12 +178,21 @@ function ConsultingForm({
       setError("모든 동의 항목을 확인해주세요.");
       return;
     }
+    // 다중선택 값을 answers 에 문자열로 합쳐 저장 (저장 구조 불변: Record<string,string>)
+    const finalAnswers: Record<string, string> = { ...answers };
+    for (const f of cfg.fields) {
+      if (f.type === "multi") {
+        const v = visible(f) ? multiValue(f.key) : "";
+        if (v) finalAnswers[f.key] = v;
+        else delete finalAnswers[f.key];
+      }
+    }
     setSubmitting(true);
     try {
       const r = await fetch("/api/consulting/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, form: cfg.formType, answers, file_paths: files, agreements: agree }),
+        body: JSON.stringify({ token, form: cfg.formType, answers: finalAnswers, file_paths: files, agreements: agree }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -191,25 +224,55 @@ function ConsultingForm({
       )}
 
       <div className="space-y-4">
-        {cfg.fields.map((f, i) => (
-          <FieldCard key={f.key} index={i + 1} field={f}>
-            {f.type === "longtext" ? (
-              <textarea
-                rows={3}
-                value={answers[f.key] || ""}
-                onChange={(e) => setAnswers((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed"
-                placeholder="자유롭게 작성해주세요"
-              />
-            ) : (
-              <ImageField
-                token={token}
-                value={files[f.key] || []}
-                onChange={(arr) => setFiles((s) => ({ ...s, [f.key]: arr }))}
-              />
-            )}
-          </FieldCard>
-        ))}
+        {cfg.fields.map((f, i) => {
+          if (f.type === "section") return <SectionHeader key={f.key} field={f} />;
+          if (!visible(f)) return null;
+          return (
+            <FieldCard key={f.key} number={isPre ? undefined : i + 1} field={f}>
+              {f.type === "longtext" && (
+                <textarea
+                  rows={3}
+                  value={answers[f.key] || ""}
+                  onChange={(e) => setAnswers((s) => ({ ...s, [f.key]: e.target.value }))}
+                  className="w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed"
+                  placeholder="자유롭게 작성해주세요"
+                />
+              )}
+              {f.type === "short" && (
+                <input
+                  type="text"
+                  value={answers[f.key] || ""}
+                  onChange={(e) => setAnswers((s) => ({ ...s, [f.key]: e.target.value }))}
+                  className="w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
+                  placeholder="입력해주세요"
+                />
+              )}
+              {f.type === "single" && (
+                <SingleSelect
+                  options={f.options || []}
+                  value={answers[f.key] || ""}
+                  onChange={(v) => setAnswers((s) => ({ ...s, [f.key]: v }))}
+                />
+              )}
+              {f.type === "multi" && (
+                <MultiSelect
+                  field={f}
+                  selected={multi[f.key] || []}
+                  onToggle={(opt) => toggleMulti(f.key, opt)}
+                  otherText={other[f.key] || ""}
+                  onOther={(v) => setOther((s) => ({ ...s, [f.key]: v }))}
+                />
+              )}
+              {f.type === "image" && (
+                <ImageField
+                  token={token}
+                  value={files[f.key] || []}
+                  onChange={(arr) => setFiles((s) => ({ ...s, [f.key]: arr }))}
+                />
+              )}
+            </FieldCard>
+          );
+        })}
       </div>
 
       {/* 동의 항목 (pre 는 없음) */}
@@ -266,20 +329,22 @@ function ConsultingForm({
 }
 
 function FieldCard({
-  index,
+  number,
   field,
   children,
 }: {
-  index: number;
+  number?: number;
   field: ConsultingField;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 shrink-0 rounded-full bg-indigo/10 text-indigo text-[11px] font-bold h-5 w-5 grid place-items-center">
-          {index}
-        </span>
+        {number !== undefined && (
+          <span className="mt-0.5 shrink-0 rounded-full bg-indigo/10 text-indigo text-[11px] font-bold h-5 w-5 grid place-items-center">
+            {number}
+          </span>
+        )}
         <div className="flex-1">
           <div className="text-sm font-semibold text-ink leading-snug">
             {field.label}
@@ -289,6 +354,95 @@ function FieldCard({
         </div>
       </div>
       <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+// 섹션 헤더 / 안내문 (입력 아님)
+function SectionHeader({ field }: { field: ConsultingField }) {
+  return (
+    <div className="pt-4 first:pt-0">
+      <div className="text-[12px] uppercase tracking-[0.2em] text-indigo font-bold">{field.label}</div>
+      {field.hint && <p className="text-xs text-ink/55 mt-1 leading-relaxed">{field.hint}</p>}
+    </div>
+  );
+}
+
+// 단일선택 (라디오 버튼)
+function SingleSelect({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {options.map((opt) => (
+        <button
+          type="button"
+          key={opt}
+          onClick={() => onChange(opt)}
+          className={`w-full text-left rounded-xl border px-3 py-2.5 text-sm transition ${
+            value === opt
+              ? "border-indigo bg-indigo/[0.06] font-semibold text-ink"
+              : "border-ink/10 bg-white text-ink/70 hover:border-indigo/40"
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// 다중선택 (체크 칩 + 선택적 기타 직접입력)
+function MultiSelect({
+  field,
+  selected,
+  onToggle,
+  otherText,
+  onOther,
+}: {
+  field: ConsultingField;
+  selected: string[];
+  onToggle: (opt: string) => void;
+  otherText: string;
+  onOther: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap gap-2">
+        {(field.options || []).map((opt) => {
+          const on = selected.includes(opt);
+          return (
+            <button
+              type="button"
+              key={opt}
+              onClick={() => onToggle(opt)}
+              className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                on
+                  ? "border-indigo bg-indigo/[0.08] font-semibold text-indigo"
+                  : "border-ink/15 bg-white text-ink/65 hover:border-indigo/40"
+              }`}
+            >
+              {on ? "✓ " : ""}
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+      {field.allowOther && (
+        <input
+          type="text"
+          value={otherText}
+          onChange={(e) => onOther(e.target.value)}
+          placeholder="기타 (직접입력)"
+          className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+        />
+      )}
     </div>
   );
 }
