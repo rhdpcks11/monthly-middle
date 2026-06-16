@@ -24,6 +24,7 @@ export type ConsultingField = {
 // 주간 성장 코칭 폼 (weekly)
 export const WEEKLY_FIELDS: ConsultingField[] = [
   { key: "screentime", label: "스크린타임 스크린샷", type: "image", required: true },
+  { key: "exam_notice_grades", label: "이번 주에 받은, 수행평가나 시험 관련 안내문 그리고 성적표가 있다면 모두 첨부해주세요.", type: "image", required: false },
   { key: "miss_reason", label: "지난 주 계획을 못 지킨 이유가 있다면 간단히", type: "longtext", required: true },
   { key: "next_plan", label: "다음 주 계획을 적어서 찍어 보내기 (가능한 수준으로)", type: "image", required: true },
   { key: "worry_korean", label: "이번주 주요 국어 고민", hint: "구체적일수록 자세한 상담이 가능해요", type: "longtext", required: true },
